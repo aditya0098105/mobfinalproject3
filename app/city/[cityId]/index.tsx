@@ -1,7 +1,8 @@
 // app/city/[cityId]/index.tsx
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
 type Place = {
@@ -392,119 +393,222 @@ export default function CityScreen() {
     : undefined;
 
   return (
-    <View style={s.wrap}>
-      <Text style={s.h1}>{city.name}</Text>
-      <Text style={s.sub}>Top attractions</Text>
-
-      {initialRegion && (
-        <MapView style={s.map} initialRegion={initialRegion}>
-          {places.map((p) => (
-            <Marker key={p.id} coordinate={p.coords} title={p.name} description={p.desc || ""} />
-          ))}
-        </MapView>
-      )}
-
-      <FlatList
-        data={places}
-        keyExtractor={(i) => i.id}
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={s.card}
-            activeOpacity={0.9}
-            onPress={() =>
-              router.push(
-                `/city/${slug}/place/${item.id}?name=${encodeURIComponent(item.name)}&lat=${item.coords.latitude}&lon=${item.coords.longitude}&cityName=${encodeURIComponent(city.name)}&country=${encodeURIComponent(city.country)}&desc=${encodeURIComponent(item.desc ?? "")}`
-              )
-            }
-          >
-            <Image source={item.img || PLACEHOLDER} style={s.thumb} resizeMode="cover" />
-            <View style={{ flex: 1 }}>
-              <Text style={s.title}>{item.name}</Text>
-              {!!item.desc && <Text style={s.desc} numberOfLines={2}>{item.desc}</Text>}
+    <LinearGradient colors={["#0f172a", "#111c2d", "#060b19"]} style={s.gradient}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={s.safe}>
+        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+          <View style={s.hero}>
+            <View style={s.heroGlow} />
+            <Text style={s.heroEyebrow}>Discover</Text>
+            <Text style={s.heroTitle}>{city.name}</Text>
+            <Text style={s.heroSubtitle}>{city.country}</Text>
+            <View style={s.heroBadge}>
+              <Text style={s.heroBadgeText}>Curated escapes</Text>
             </View>
-          </TouchableOpacity>
-        )}
-      />
+          </View>
 
-      {/* Events button (shows only if events exist) */}
-      {city.events && city.events.length > 0 && (
-        <TouchableOpacity
-          style={[s.card, { marginTop: 20, backgroundColor: "#eef" }]}
-          onPress={() => router.push(`/city/${slug}/events?cityName=${encodeURIComponent(city.name)}`)}
-        >
-          <Text style={{ fontWeight: "700", fontSize: 16 }}>🎉 View Events in {city.name}</Text>
-        </TouchableOpacity>
-      )}
+          {initialRegion && (
+            <View style={s.mapShell}>
+              <MapView style={s.map} initialRegion={initialRegion}>
+                {places.map((p) => (
+                  <Marker key={p.id} coordinate={p.coords} title={p.name} description={p.desc || ""} />
+                ))}
+              </MapView>
+            </View>
+          )}
 
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>Must-see spots</Text>
+            <Text style={s.sectionSubtitle}>Hand-picked highlights to make the most of your stay.</Text>
+          </View>
 
+          <View style={s.places}>
+            {places.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.9}
+                style={s.placeCard}
+                onPress={() =>
+                  router.push(
+                    `/city/${slug}/place/${item.id}?name=${encodeURIComponent(item.name)}&lat=${item.coords.latitude}&lon=${item.coords.longitude}&cityName=${encodeURIComponent(city.name)}&country=${encodeURIComponent(city.country)}&desc=${encodeURIComponent(item.desc ?? "")}`
+                  )
+                }
+              >
+                <Image source={item.img || PLACEHOLDER} style={s.placeImage} resizeMode="cover" />
+                <View style={s.placeContent}>
+                  <Text style={s.placeName}>{item.name}</Text>
+                  {!!item.desc && (
+                    <Text style={s.placeDesc} numberOfLines={2}>
+                      {item.desc}
+                    </Text>
+                  )}
+                  <View style={s.placeMeta}>
+                    <Text style={s.placeMetaText}>Tap to explore details</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
 
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>Plan your trip</Text>
+            <Text style={s.sectionSubtitle}>Quick access to everything you need.</Text>
+          </View>
 
-      {city && (//yhaaaa lagaya h
-  <TouchableOpacity
-    style={[s.card, { marginTop: 20, backgroundColor: "#efe" }]}
-    onPress={() =>
-      router.push(`/city/${slug}/transport?cityName=${encodeURIComponent(city.name)}`)
-    }
-  >
-    <Text style={{ fontWeight: "700", fontSize: 16 }}>
-      🚍 View Transportation in {city.name}
-    </Text> 
-  </TouchableOpacity>
-  
+          <View style={s.actions}>
+            {city.events && city.events.length > 0 && (
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={s.actionCard}
+                onPress={() => router.push(`/city/${slug}/events?cityName=${encodeURIComponent(city.name)}`)}
+              >
+                <LinearGradient colors={["#4338ca", "#2563eb"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.actionGradient}>
+                  <Text style={s.actionEmoji}>🎉</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.actionTitle}>See upcoming events</Text>
+                    <Text style={s.actionSubtitle}>Find experiences happening while you’re in town.</Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
 
-  
-)}  
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={s.actionCard}
+              onPress={() =>
+                router.push(`/city/${slug}/transport?cityName=${encodeURIComponent(city.name)}`)
+              }
+            >
+              <LinearGradient colors={["#0891b2", "#0ea5e9"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.actionGradient}>
+                <Text style={s.actionEmoji}>🚍</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.actionTitle}>Navigate the city</Text>
+                  <Text style={s.actionSubtitle}>Transit tips and ways to get around with ease.</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
 
-<TouchableOpacity
-  style={[s.card, { marginTop: 20, backgroundColor: "#ffe" }]}
-  onPress={() =>
-    router.push({
-      pathname: "/city/[cityId]/book",
-      params: {
-        cityId: slug,          // city id
-        hotel: "Sample Hotel", // static test hotel
-        city: city.name,       // actual city name
-      },
-    })
-  }
->
-  <Text style={{ fontWeight: "700", fontSize: 16 }}>
-    📅 Book a Hotel in {city.name}
-  </Text>
-</TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={s.actionCard}
+              onPress={() =>
+                router.push({
+                  pathname: "/city/[cityId]/book",
+                  params: {
+                    cityId: slug,
+                    hotel: "Sample Hotel",
+                    city: city.name,
+                  },
+                })
+              }
+            >
+              <LinearGradient colors={["#d946ef", "#ec4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.actionGradient}>
+                <Text style={s.actionEmoji}>🏨</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.actionTitle}>Book a stay</Text>
+                  <Text style={s.actionSubtitle}>Reserve hand-picked hotels in just a few taps.</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
 
-
-
-<TouchableOpacity
-  style={[s.card, { marginTop: 20, backgroundColor: "#fef" }]}
-  onPress={() => router.push(`/city/${slug}/bookings`)}
->
-  <Text style={{ fontWeight: "700", fontSize: 16 }}>
-    📖 View Bookings in {city.name}
-  </Text>
-</TouchableOpacity>
-
-
-
-    </View>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={s.actionCard}
+              onPress={() => router.push(`/city/${slug}/bookings`)}
+            >
+              <LinearGradient colors={["#14b8a6", "#22c55e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.actionGradient}>
+                <Text style={s.actionEmoji}>📖</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.actionTitle}>View your bookings</Text>
+                  <Text style={s.actionSubtitle}>Keep tabs on every reservation in one place.</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const s = StyleSheet.create({
-  wrap: { flex: 1, padding: 16 },
-  h1: { fontSize: 22, fontWeight: "700" },
-  sub: { opacity: 0.7, marginBottom: 12 },
-  map: { height: 180, borderRadius: 12, marginBottom: 12 },
-  card: {
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
+  scroll: { padding: 24, paddingBottom: 80 },
+  hero: {
+    backgroundColor: "rgba(15, 23, 42, 0.65)",
+    borderRadius: 28,
+    padding: 24,
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
+    borderColor: "rgba(148, 163, 184, 0.18)",
+    overflow: "hidden",
+    marginBottom: 28,
+  },
+  heroGlow: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    backgroundColor: "#38bdf8",
+    opacity: 0.18,
+    borderRadius: 160,
+    right: -80,
+    top: -120,
+  },
+  heroEyebrow: { color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1.5, fontSize: 12, marginBottom: 10 },
+  heroTitle: { fontSize: 34, fontWeight: "800", color: "#f8fafc" },
+  heroSubtitle: { fontSize: 18, color: "#cbd5f5", marginTop: 6 },
+  heroBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(59, 130, 246, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.35)",
+    marginTop: 18,
+  },
+  heroBadgeText: { color: "#bfdbfe", fontSize: 13, fontWeight: "600" },
+  mapShell: {
+    borderRadius: 24,
+    overflow: "hidden",
+    height: 220,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.25)",
+    marginBottom: 28,
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+  },
+  map: { flex: 1 },
+  sectionHeader: { marginBottom: 16 },
+  sectionTitle: { fontSize: 22, fontWeight: "700", color: "#f1f5f9" },
+  sectionSubtitle: { color: "#94a3b8", marginTop: 6, lineHeight: 20 },
+  places: { gap: 16, marginBottom: 32 },
+  placeCard: {
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.18)",
+    overflow: "hidden",
+  },
+  placeImage: { width: "100%", height: 190 },
+  placeContent: { padding: 18, gap: 10 },
+  placeName: { fontSize: 20, fontWeight: "700", color: "#f8fafc" },
+  placeDesc: { color: "#cbd5e1", lineHeight: 20 },
+  placeMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 6,
+    paddingVertical: 6,
   },
-  thumb: { width: 72, height: 72, borderRadius: 10, backgroundColor: "#F2F2F2" },
-  title: { fontWeight: "600", marginBottom: 4 },
-  desc: { opacity: 0.6 },
+  placeMetaText: { color: "#60a5fa", fontWeight: "600", fontSize: 13, letterSpacing: 0.2 },
+  actions: { gap: 16, marginBottom: 24 },
+  actionCard: { borderRadius: 24, overflow: "hidden" },
+  actionGradient: {
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  actionEmoji: { fontSize: 28 },
+  actionTitle: { color: "#f8fafc", fontSize: 18, fontWeight: "700", marginBottom: 4 },
+  actionSubtitle: { color: "#e2e8f0", opacity: 0.86, lineHeight: 18 },
 });
