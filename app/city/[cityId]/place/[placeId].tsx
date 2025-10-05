@@ -18,6 +18,7 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import MapView, { Marker, MapType } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Colors, Spacing, Radius } from "../../../../theme";
 import { Card, H1, P, Divider, SectionTitle } from "../../../../components/ui";
 
@@ -64,11 +65,11 @@ function amaps(lat: number, lng: number, flag: "d" | "w" | "r") {
 }
 
 /* ---------- Tiny reusable UI bits ---------- */
-function Chip({ icon, label }: { icon: React.ComponentProps<typeof Ionicons>["name"]; label: string }) {
+function HeroChip({ icon, label }: { icon: React.ComponentProps<typeof Ionicons>["name"]; label: string }) {
   return (
-    <View style={s.chip}>
-      <Ionicons name={icon} size={13} color={Colors.textDim} />
-      <Text style={s.chipText}>{label}</Text>
+    <View style={s.heroChip}>
+      <Ionicons name={icon} size={13} color="rgba(255,255,255,0.8)" />
+      <Text style={s.heroChipText}>{label}</Text>
     </View>
   );
 }
@@ -246,39 +247,57 @@ export default function PlaceDetails() {
   const placeLine = `${label}${cityName ? ` — ${cityName}` : ""}${country ? `, ${country}` : ""}`;
 
   return (
-    <ScrollView style={{ backgroundColor: Colors.bg }} contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.md }}>
-      {/* Title */}
-      <H1>{label}</H1>
-      <P style={{ marginTop: -4 }}>{(cityName || "") + (cityName && country ? ", " : "") + (country || "")}</P>
-      {!!info && <P style={{ marginTop: Spacing.sm }}>{info}</P>}
+    <ScrollView
+      style={{ backgroundColor: Colors.bg }}
+      contentContainerStyle={{ paddingBottom: Spacing.xl }}
+    >
+      {/* Hero */}
+      <LinearGradient
+        colors={[Colors.primary, Colors.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={s.hero}
+      >
+        <View style={s.heroBadge}>
+          <Ionicons name="navigate" size={14} color="rgba(255,255,255,0.9)" />
+          <Text style={s.heroBadgeText}>Signature spot</Text>
+        </View>
+        <Text style={s.heroTitle}>{label}</Text>
+        <Text style={s.heroSubtitle}>{placeLine}</Text>
+        {!!info && <Text style={s.heroDescription}>{info}</Text>}
+        <View style={s.heroChips}>
+          {!!cityName && <HeroChip icon="location-outline" label={cityName} />}
+          {!!country && <HeroChip icon="flag-outline" label={country} />}
+          <HeroChip icon="time-outline" label="Best at sunset" />
+          <HeroChip icon="walk-outline" label="Plan 60–90 min" />
+        </View>
+      </LinearGradient>
 
-      {/* Quick facts */}
-      <View style={s.chipsRow}>
-        {!!cityName && <Chip icon="location-outline" label={cityName} />}
-        {!!country && <Chip icon="flag-outline" label={country} />}
-        <Chip icon="time-outline" label="Best: sunset" />
-        <Chip icon="walk-outline" label="Visit: 60–90m" />
-        <Chip icon="accessibility-outline" label="Family-friendly" />
-      </View>
+      <View style={s.sectionCard}>
+        <Text style={s.sectionTitle}>Plan your experience</Text>
+        <Text style={s.sectionSubtitle}>
+          Save this gem, share it with friends, or open directions with a single tap.
+        </Text>
 
-      {/* Actions grid (2×2) */}
-      <View style={s.grid}>
-        <ActionTile
-          icon={isSaved ? "star" : "star-outline"}
-          label={isSaved ? "Saved" : "Save"}
-          onPress={toggleSave}
-        />
-        <ActionTile icon="share-outline" label="Share" onPress={sharePlace} />
-        <ActionTile icon="map-outline" label="Google Maps" onPress={openGSearch} />
-        {Platform.OS === "ios" ? (
-          <ActionTile icon="logo-apple" label="Apple Maps" onPress={openASearch} />
-        ) : (
-          <ActionTile icon="cloud-download-outline" label="Offline tips" onPress={() => setHelpOpen(true)} />
-        )}
+        {/* Actions grid (2×2) */}
+        <View style={s.grid}>
+          <ActionTile
+            icon={isSaved ? "star" : "star-outline"}
+            label={isSaved ? "Saved" : "Save"}
+            onPress={toggleSave}
+          />
+          <ActionTile icon="share-outline" label="Share" onPress={sharePlace} />
+          <ActionTile icon="map-outline" label="Google Maps" onPress={openGSearch} />
+          {Platform.OS === "ios" ? (
+            <ActionTile icon="logo-apple" label="Apple Maps" onPress={openASearch} />
+          ) : (
+            <ActionTile icon="cloud-download-outline" label="Offline tips" onPress={() => setHelpOpen(true)} />
+          )}
+        </View>
       </View>
 
       {/* Mini-Map (non-interactive) */}
-      <Card style={{ padding: 0, overflow: "hidden" }}>
+      <Card style={{ padding: 0, overflow: "hidden", marginHorizontal: Spacing.lg }}>
         <MapView
           pointerEvents="none"
           style={{ height: 160, width: "100%" }}
@@ -304,9 +323,22 @@ export default function PlaceDetails() {
         </Pressable>
       </Card>
 
+      <View style={[s.sectionCard, { marginTop: Spacing.lg }]}> 
+        <SectionTitle style={{ marginBottom: Spacing.sm }}>Good to know</SectionTitle>
+        <View style={s.tipRow}>
+          <Ionicons name="sunny" size={18} color={Colors.accent} />
+          <Text style={s.tipText}>Arrive an hour before sunset for the warmest light and calmer crowds.</Text>
+        </View>
+        <Divider style={{ marginVertical: Spacing.sm }} />
+        <View style={s.tipRow}>
+          <Ionicons name="cafe" size={18} color={Colors.primary} />
+          <Text style={s.tipText}>Local cafés nearby stay open late—perfect for a quick break after exploring.</Text>
+        </View>
+      </View>
+
       {/* Directions */}
-      <SectionTitle>Directions</SectionTitle>
-      <Card style={{ paddingVertical: 2, paddingHorizontal: Spacing.md }}>
+      <SectionTitle style={{ marginTop: Spacing.lg, marginHorizontal: Spacing.lg }}>Directions</SectionTitle>
+      <Card style={s.directionsCard}>
         <ActionRow icon="car-outline" label="Drive" badge="Google" onPress={() => Linking.openURL(gmaps(latitude, longitude, "driving"))} />
         <View style={s.hr} />
         <ActionRow icon="walk-outline" label="Walk" badge="Google" onPress={() => Linking.openURL(gmaps(latitude, longitude, "walking"))} />
@@ -326,7 +358,9 @@ export default function PlaceDetails() {
       </Card>
 
       {/* Info footnote */}
-      <P style={{ textAlign: "center", opacity: 0.7 }}>Directions open in external map apps.</P>
+      <P style={{ textAlign: "center", opacity: 0.7, marginHorizontal: Spacing.lg }}>
+        Directions open in external map apps.
+      </P>
 
       {/* Offline tips modal */}
       <Modal visible={helpOpen} animationType="slide" transparent>
@@ -378,30 +412,77 @@ export default function PlaceDetails() {
 const s = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing.lg, backgroundColor: Colors.bg },
 
-  chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
+  hero: {
+    margin: Spacing.lg,
+    padding: Spacing.lg,
+    borderRadius: Radius.xl,
+    shadowColor: Colors.shadow,
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 24,
+    elevation: 6,
+    gap: Spacing.sm,
+  },
+  heroBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  heroBadgeText: { color: "#F8FAFC", fontWeight: "700", fontSize: 12 },
+  heroTitle: { fontSize: 32, fontWeight: "800", color: "#fff", lineHeight: 34 },
+  heroSubtitle: { color: "rgba(248,250,252,0.9)", fontWeight: "500" },
+  heroDescription: { color: "rgba(248,250,252,0.82)", lineHeight: 20 },
+  heroChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: Spacing.sm },
+  heroChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: Colors.cardAlt,
+    backgroundColor: "rgba(15,23,42,0.28)",
+  },
+  heroChipText: { color: "rgba(248,250,252,0.85)", fontSize: 12, fontWeight: "700" },
+
+  sectionCard: {
+    backgroundColor: Colors.card,
+    marginHorizontal: Spacing.lg,
+    padding: Spacing.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
   },
-  chipText: { color: Colors.textDim, fontSize: 12, fontWeight: "800" },
+  sectionTitle: { fontSize: 20, fontWeight: "800", color: Colors.text },
+  sectionSubtitle: { color: Colors.textDim, marginTop: 6, lineHeight: 20 },
+
+  tipRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
+  tipText: { flex: 1, color: Colors.text, lineHeight: 20 },
 
   grid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.md, justifyContent: "space-between" },
   tile: {
     width: "48%",
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardAlt,
     borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: "center",
-    gap: 8,
+    gap: 10,
+    shadowColor: Colors.shadow,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   tileIcon: {
     width: 36,
@@ -409,9 +490,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 999,
-    backgroundColor: Colors.cardAlt,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: "rgba(58,91,255,0.08)",
   },
   tileLabel: { color: Colors.text, fontWeight: "800" },
 
@@ -448,6 +527,16 @@ const s = StyleSheet.create({
 
   hr: { height: 1, backgroundColor: Colors.border },
   hrWide: { height: 1, backgroundColor: Colors.border, marginVertical: 2 },
+
+  directionsCard: {
+    paddingVertical: 2,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+  },
 
   /* pill (reused for close button) */
   pill: {
