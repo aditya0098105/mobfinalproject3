@@ -20,8 +20,9 @@ export default function Hero() {
         style={s.overlay}
       >
         <Text style={s.kicker}>CityHop</Text>
-        <Text style={s.title}>Elevate your travel plans.</Text>
-        <Text style={s.subtitle}>Discover city highlights, hidden gems, and curated stays in one beautiful place.</Text>
+        <Text style={s.lead}>Let’s</Text>
+        <Text style={s.leadAccent}>Destinations today!</Text>
+        <Text style={s.subtitle}>Elevate your travel plans with curated highlights, hidden gems, and boutique stays picked for you.</Text>
         <View style={s.badges}>
           <View style={s.badge}>
             <Feather name="sun" size={14} color={Colors.accent} />
@@ -63,10 +64,16 @@ const s = StyleSheet.create({
     letterSpacing: 2,
     textTransform: "uppercase",
   },
-  title: {
-    color: "#fff",
+  lead: {
+    color: "#F8FAFC",
+    fontWeight: "800",
+    fontSize: 26,
+    letterSpacing: 1,
+  },
+  leadAccent: {
+    color: "#38bdf8",
     fontWeight: "900",
-    fontSize: 28,
+    fontSize: 30,
     lineHeight: 34,
   },
   subtitle: {
