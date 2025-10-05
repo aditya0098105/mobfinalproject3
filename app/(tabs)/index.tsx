@@ -13,6 +13,11 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
+import { Card, Pill, SectionTitle, Divider } from "../../components/ui";
+import Hero from "../../components/Hero";
+import { Colors, Spacing, Radius } from "../../theme";
 
 // Polyfills (keep at top)
 import "react-native-get-random-values";
@@ -43,18 +48,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-// UI imports
-import { Colors, Spacing, Radius } from "../../theme";
-import { Button, Card, Pill, SectionTitle, Divider } from "../../components/ui";
-import Hero from "../../components/Hero";
-
 const SUGGEST = [
   "London", "New York", "Paris", "Tokyo",
   "Jaipur", "Cherrapunji", "Tuscany", "Zurich",
   "Himalayas", "Wellington"
 ];
 
-const POPULAR: Array<{ name: string; emoji: string }> = [
+const POPULAR: { name: string; emoji: string }[] = [
   { name: "Paris", emoji: "🗼" }, { name: "New York", emoji: "🗽" }, { name: "Tokyo", emoji: "🗾" },
   { name: "London", emoji: "🎡" }, { name: "Zurich", emoji: "🏔️" }, { name: "Tuscany", emoji: "🏛️" },
 ];
@@ -235,6 +235,11 @@ export default function Home() {
     ? SUGGEST.filter((c) => c.toLowerCase().startsWith(q.toLowerCase())).slice(0, 5)
     : SUGGEST.slice(0, 8);
 
+  const userName = session?.user?.user_metadata?.full_name as string | undefined;
+  const greeting = userName ? `Welcome back, ${userName.split(" ")[0]}!` : "Welcome back";
+  const subGreeting = "Let’s curate a bespoke city guide for your next getaway.";
+  const suggestionHint = SUGGEST.slice(0, 3).join(", ");
+
   if (authLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.bg, alignItems: "center", justifyContent: "center" }}>
@@ -249,7 +254,7 @@ export default function Home() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: Colors.bg }}
-      contentContainerStyle={{ paddingBottom: Spacing.lg }}
+      contentContainerStyle={{ paddingBottom: Spacing.xl }}
       keyboardShouldPersistTaps="handled"
     >
       {/* Banner */}
@@ -257,34 +262,61 @@ export default function Home() {
 
       {/* Home content */}
       <View style={s.container}>
-        <View style={{ marginTop: -28 }}>
-          <Card>
+        <View style={s.welcomeCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.welcomeLabel}>{greeting}</Text>
+            <Text style={s.welcomeSubtitle}>{subGreeting}</Text>
+          </View>
+          <View style={s.welcomeBadge}>
+            <Feather name="compass" size={24} color="#fff" />
+          </View>
+        </View>
+
+        <Card style={s.searchCard}>
+          <Text style={s.searchTitle}>Where are we headed?</Text>
+          <View style={s.searchRow}>
+            <Feather name="search" size={18} color={Colors.textDim} />
             <TextInput
-              placeholder="Search city (e.g., Tokyo)"
+              placeholder="Search for a city or hidden gem"
               placeholderTextColor={Colors.textDim}
               value={q}
               onChangeText={setQ}
               onSubmitEditing={onSearch}
               returnKeyType="search"
               autoCorrect={false}
-              style={s.input}
+              style={s.searchInput}
             />
-            <Button title="Search" onPress={onSearch} />
-          </Card>
-        </View>
+          </View>
+          <TouchableOpacity onPress={onSearch} activeOpacity={0.92}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.searchBtn}
+            >
+              <Text style={s.searchBtnText}>Search destinations</Text>
+              <Feather name="arrow-up-right" size={18} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
+          <View style={s.tipRow}>
+            <Feather name="info" size={14} color={Colors.textDim} />
+            <Text style={s.tipText}>Try {suggestionHint} to get inspired.</Text>
+          </View>
+        </Card>
 
         {/* Saved from Supabase */}
         {saved.length > 0 && (
           <>
             <SectionTitle>Saved</SectionTitle>
-            <View style={s.savedWrap}>
+            <View style={s.savedList}>
               {saved.map((p) => {
                 const citySlug = toSlug(p.city || "");
                 const placeSlug = toSlug(p.name);
+                const location = [p.city, p.country].filter(Boolean).join(", ");
                 return (
                   <TouchableOpacity
                     key={p.id}
-                    style={s.savedChip}
+                    style={s.savedItem}
                     activeOpacity={0.9}
                     onPress={() =>
                       router.push({
@@ -300,7 +332,16 @@ export default function Home() {
                       } as any)
                     }
                   >
-                    <Text style={s.savedChipText} numberOfLines={1}>{p.name}</Text>
+                    <View style={s.savedIconWrap}>
+                      <Feather name="bookmark" size={16} color={Colors.primary} />
+                    </View>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Text style={s.savedTitle} numberOfLines={1}>{p.name}</Text>
+                      {!!location && (
+                        <Text style={s.savedMeta} numberOfLines={1}>{location}</Text>
+                      )}
+                    </View>
+                    <Feather name="chevron-right" size={18} color={Colors.textDim} />
                   </TouchableOpacity>
                 );
               })}
@@ -310,6 +351,7 @@ export default function Home() {
         )}
 
         <SectionTitle>Suggestions</SectionTitle>
+        <Text style={s.sectionSubtitle}>Hand-picked destinations based on your recent searches.</Text>
         <View style={s.pillsWrap}>
           {filtered.map((c) => (<Pill key={c} label={c} onPress={() => go(c)} />))}
         </View>
@@ -317,18 +359,36 @@ export default function Home() {
         <Divider />
 
         <SectionTitle>Popular cities</SectionTitle>
+        <Text style={s.sectionSubtitle}>Trending hotspots that travelers can’t stop raving about.</Text>
         <View style={s.grid}>
-          {POPULAR.map((item) => (
+          {POPULAR.map((item, index) => (
             <TouchableOpacity key={item.name} style={s.tile} activeOpacity={0.9} onPress={() => go(item.name)}>
-              <Text style={s.emoji}>{item.emoji}</Text>
-              <Text style={s.tileLabel}>{item.name}</Text>
+              <LinearGradient
+                colors={[Colors.cardAlt, "#FFFFFF"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.tileGradient}
+              >
+                <View style={s.tileHeader}>
+                  <View style={s.tileBadge}>
+                    <Text style={s.tileBadgeText}>{`0${index + 1}`}</Text>
+                  </View>
+                  <Text style={s.emoji}>{item.emoji}</Text>
+                </View>
+                <Text style={s.tileLabel}>{item.name}</Text>
+                <View style={s.tileFooter}>
+                  <Feather name="navigation" size={14} color={Colors.primary} />
+                  <Text style={s.tileFooterText}>Tap to explore</Text>
+                </View>
+              </LinearGradient>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* 👇 Sign Out — bottom */}
-        <TouchableOpacity onPress={() => supabase.auth.signOut()} style={s.signoutBtn}>
-          <Text style={s.signoutText}>Sign Out ({session?.user?.email ?? "account"})</Text>
+        <TouchableOpacity onPress={() => supabase.auth.signOut()} activeOpacity={0.85} style={s.signoutBtn}>
+          <Feather name="log-out" size={16} color={Colors.primary} />
+          <Text style={s.signoutText}>Sign out ({session?.user?.email ?? "account"})</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -339,37 +399,191 @@ const s = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    gap: Spacing.md,
+    paddingTop: Spacing.xl,
+    gap: Spacing.lg,
     backgroundColor: Colors.bg,
-    paddingBottom: Spacing.lg, // extra bottom space for scroll
+    paddingBottom: Spacing.xl, // extra bottom space for scroll
   },
-  input: {
-    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, color: Colors.text,
-    borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md, fontSize: 16,
+  pillsWrap: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: Spacing.lg, marginTop: Spacing.sm },
+  tile: {
+    width: "48%",
+    borderRadius: Radius.lg,
   },
-  // Saved chips
-  savedWrap: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm },
-  savedChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
+  emoji: { fontSize: 28 },
+  tileLabel: { color: Colors.text, fontWeight: "800", fontSize: 18, marginTop: Spacing.sm },
+
+  // sign out styles
+  signoutBtn: {
+    marginTop: Spacing.xl,
+    alignSelf: "center",
     backgroundColor: Colors.card,
+    borderRadius: 999,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  savedChipText: { color: Colors.text, fontWeight: "600" },
-
-  pillsWrap: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm },
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: Spacing.md, marginTop: Spacing.sm },
-  tile: {
-    width: "48%", backgroundColor: Colors.card, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border,
-    paddingVertical: 16, alignItems: "center", gap: 6,
-  },
-  emoji: { fontSize: 26 },
-  tileLabel: { color: Colors.text, fontWeight: "700" },
-
-  // sign out styles
-  signoutBtn: { marginTop: Spacing.lg, alignSelf: "center" },
   signoutText: { color: Colors.primary, fontWeight: "800" },
+
+  welcomeCard: {
+    marginTop: -Spacing.xl,
+    backgroundColor: Colors.card,
+    padding: Spacing.lg,
+    borderRadius: Radius.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.lg,
+    shadowColor: Colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 6,
+  },
+  welcomeLabel: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: Colors.text,
+  },
+  welcomeSubtitle: {
+    color: Colors.textDim,
+    marginTop: Spacing.xs,
+    lineHeight: 20,
+  },
+  welcomeBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.primary,
+  },
+  searchCard: {
+    gap: Spacing.md,
+  },
+  searchTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.cardAlt,
+  },
+  searchInput: {
+    flex: 1,
+    color: Colors.text,
+    fontSize: 16,
+  },
+  searchBtn: {
+    marginTop: Spacing.sm,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.sm + 4,
+    paddingHorizontal: Spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  searchBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  tipRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  tipText: {
+    color: Colors.textDim,
+    fontSize: 13,
+    flex: 1,
+  },
+  savedList: {
+    gap: Spacing.sm,
+  },
+  savedItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    backgroundColor: Colors.card,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 3,
+  },
+  savedIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.bgAlt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  savedTitle: {
+    color: Colors.text,
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  savedMeta: {
+    color: Colors.textDim,
+    fontSize: 13,
+  },
+  sectionSubtitle: {
+    color: Colors.textDim,
+    fontSize: 13,
+    marginBottom: Spacing.sm,
+  },
+  tileGradient: {
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: Spacing.sm,
+  },
+  tileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  tileBadge: {
+    backgroundColor: Colors.bgAlt,
+    borderRadius: 999,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+  },
+  tileBadgeText: {
+    color: Colors.primary,
+    fontWeight: "700",
+    fontSize: 12,
+    letterSpacing: 0.6,
+  },
+  tileFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  tileFooterText: {
+    color: Colors.primary,
+    fontWeight: "600",
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
 });
