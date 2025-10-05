@@ -32,7 +32,14 @@ export function Button({
 }) {
   const base = [styles.btn, compact && { paddingVertical: 10, paddingHorizontal: 14 }];
   const variants = {
-    primary: { backgroundColor: Colors.primary },
+    primary: {
+      backgroundColor: Colors.primary,
+      shadowColor: Colors.shadow,
+      shadowOpacity: 1,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 3,
+    },
     ghost: { backgroundColor: "transparent" as const },
     outline: { backgroundColor: "transparent" as const, borderWidth: 1, borderColor: Colors.border },
   };
@@ -85,6 +92,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     padding: Spacing.md,
+    shadowColor: Colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 4,
   },
 
   // Buttons
@@ -100,14 +112,14 @@ const styles = StyleSheet.create({
 
   // Pills (light)
   pill: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 999,
-    backgroundColor: "#EFEFEF", // light chip
+    backgroundColor: Colors.cardAlt,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  pillText: { color: Colors.text, fontWeight: "600" },
+  pillText: { color: Colors.text, fontWeight: "600", letterSpacing: 0.2 },
 
   // Section header + divider
   section: {
