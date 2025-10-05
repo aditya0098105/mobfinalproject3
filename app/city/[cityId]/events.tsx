@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { FlatList, SafeAreaView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { CITY_DATA } from "./index"; // ✅ import from index.tsx
+import { Colors, Radius, Spacing } from "../../../theme";
 
 export default function EventsScreen() {
   const { cityId, cityName } = useLocalSearchParams<{
@@ -52,23 +53,28 @@ export default function EventsScreen() {
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={() => (
-            <View style={s.header}>
-              <Text style={s.h1}>🎉 Events in {city.name}</Text>
-              <Text style={s.subtitle}>Make plans with hand-picked gatherings and unforgettable nights out.</Text>
+            <View style={s.heroCard}>
+              <View style={s.heroBadge}>
+                <Text style={s.badgeText}>City Spotlight</Text>
+              </View>
+              <Text style={s.heroTitle}>Events in {city.name}</Text>
+              <Text style={s.heroSubtitle}>
+                Make the most of your stay with curated happenings, live music, and pop-up culture moments.
+              </Text>
             </View>
           )}
-          ItemSeparatorComponent={() => <View style={{ height: 18 }} />}
-          renderItem={({ item }) => (
-            <View style={s.card}>
-              <LinearGradient
-                colors={["#1d4ed8", "#9333ea"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={s.cardAccent}
-              />
-              <Text style={s.title}>{item.title}</Text>
-              <Text style={s.date}>{`📅\n${item.date}`}</Text>
-              {!!item.desc && <Text style={s.desc}>{item.desc}</Text>}
+          ItemSeparatorComponent={() => <View style={{ height: 22 }} />}
+          renderItem={({ item, index }) => (
+            <View style={s.eventRow}>
+              <View style={s.timeline}>
+                <View style={s.timelineDot} />
+                {index !== events.length - 1 && <View style={s.timelineLine} />}
+              </View>
+              <View style={s.card}>
+                <Text style={s.date}>{item.date}</Text>
+                <Text style={s.title}>{item.title}</Text>
+                {!!item.desc && <Text style={s.desc}>{item.desc}</Text>}
+              </View>
             </View>
           )}
         />
@@ -80,29 +86,68 @@ export default function EventsScreen() {
 const s = StyleSheet.create({
   gradient: { flex: 1 },
   safe: { flex: 1 },
-  list: { padding: 24, paddingBottom: 48 },
-  header: { marginBottom: 12 },
-  h1: { fontSize: 28, fontWeight: "800", color: "#f8fafc" },
-  subtitle: { color: "#94a3b8", marginTop: 10, lineHeight: 20 },
-  centerBox: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  card: {
-    backgroundColor: "rgba(15, 23, 42, 0.85)",
-    borderRadius: 24,
-    padding: 22,
+  list: { padding: Spacing.lg, paddingBottom: Spacing.xl },
+  centerBox: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing.lg },
+  h1: { fontSize: 28, fontWeight: "800", color: "#f8fafc", textAlign: "center" },
+  subtitle: { color: "#94a3b8", marginTop: 10, lineHeight: 20, textAlign: "center" },
+
+  heroCard: {
+    backgroundColor: "rgba(15,23,42,0.65)",
+    padding: Spacing.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.2)",
-    overflow: "hidden",
+    borderColor: "rgba(148, 163, 184, 0.25)",
+    marginBottom: Spacing.lg,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
-  cardAccent: {
-    position: "absolute",
-    top: -40,
-    right: -60,
-    width: 180,
-    height: 180,
-    opacity: 0.2,
+  heroBadge: {
+    alignSelf: "flex-start",
     borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(59,130,246,0.25)",
+    marginBottom: Spacing.sm,
   },
-  title: { fontSize: 20, fontWeight: "700", color: "#f8fafc", marginBottom: 12 },
-  date: { color: "#bfdbfe", fontWeight: "600", fontSize: 15, marginBottom: 12, lineHeight: 20 },
-  desc: { color: "#cbd5e1", lineHeight: 20 },
+  badgeText: { color: "#bfdbfe", fontWeight: "700", fontSize: 12, letterSpacing: 1 },
+  heroTitle: { fontSize: 30, fontWeight: "800", color: "#f8fafc" },
+  heroSubtitle: { color: "#cbd5f5", marginTop: Spacing.sm, lineHeight: 22 },
+
+  eventRow: { flexDirection: "row", alignItems: "stretch" },
+  timeline: { alignItems: "center", marginRight: Spacing.md },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: Colors.accent,
+    borderWidth: 3,
+    borderColor: "rgba(15,23,42,0.9)",
+    marginTop: 6,
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: "rgba(148,163,184,0.3)",
+    marginTop: 2,
+  },
+  card: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.72)",
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.18)",
+  },
+  title: { fontSize: 20, fontWeight: "700", color: "#f8fafc", marginTop: Spacing.xs },
+  date: {
+    color: Colors.accent,
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  desc: { color: "#cbd5e1", lineHeight: 20, marginTop: Spacing.sm },
 });

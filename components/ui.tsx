@@ -71,12 +71,18 @@ export function Pill({ label, onPress }: { label: string; onPress: () => void })
   );
 }
 
-export function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <Text style={styles.section}>{children}</Text>;
+export function SectionTitle({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: TextStyle;
+}) {
+  return <Text style={[styles.section, style]}>{children}</Text>;
 }
 
-export function Divider() {
-  return <View style={styles.divider} />;
+export function Divider({ style }: { style?: ViewStyle }) {
+  return <View style={[styles.divider, style]} />;
 }
 
 const styles = StyleSheet.create({
