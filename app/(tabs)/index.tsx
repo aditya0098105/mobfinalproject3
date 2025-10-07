@@ -10,11 +10,16 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { Card, Pill, SectionTitle, Divider } from "../../components/ui";
 import Hero from "../../components/Hero";
 import { Colors, Spacing, Radius } from "../../theme";
@@ -81,10 +86,49 @@ function InlineAuth() {
   const [pass, setPass] = useState("");
   const [mode, setMode] = useState<"in" | "up">("in");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // NEW: extra fields for Sign Up
   const [fullName, setFullName] = useState("");
-  const [dob, setDob] = useState(""); // YYYY-MM-DD (optional)
+  const [dob, setDob] = useState("");
+  const [dobDate, setDobDate] = useState<Date | null>(null);
+  const [showIosPicker, setShowIosPicker] = useState(false);
+
+  useEffect(() => {
+    if (mode === "in") {
+      setShowIosPicker(false);
+    }
+  }, [mode]);
+
+  const handleDobSelect = (date: Date) => {
+    setDobDate(date);
+    const formatted = date.toISOString().split("T")[0];
+    setDob(formatted);
+  };
+
+  const openDatePicker = () => {
+    const initialDate = dobDate ?? new Date(2000, 0, 1);
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        mode: "date",
+        value: initialDate,
+        maximumDate: new Date(),
+        onChange: (_event, selectedDate) => {
+          if (selectedDate) {
+            handleDobSelect(selectedDate);
+          }
+        },
+      });
+    } else {
+      setShowIosPicker(true);
+    }
+  };
+
+  const onIosDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (selectedDate) {
+      handleDobSelect(selectedDate);
+    }
+  };
 
   const submit = async () => {
     if (!email || !pass) return Alert.alert("Missing", "Enter email and password");
@@ -135,14 +179,28 @@ function InlineAuth() {
           value={email}
           onChangeText={setEmail}
         />
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor={Colors.textDim}
-          secureTextEntry
-          style={authStyles.input}
-          value={pass}
-          onChangeText={setPass}
-        />
+        <View style={authStyles.passwordWrapper}>
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor={Colors.textDim}
+            secureTextEntry={!showPassword}
+            style={[authStyles.input, authStyles.passwordInput]}
+            value={pass}
+            onChangeText={setPass}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+            onPress={() => setShowPassword((prev) => !prev)}
+            style={authStyles.eyeToggle}
+          >
+            <Feather
+              name={showPassword ? "eye-off" : "eye"}
+              size={20}
+              color={Colors.textDim}
+            />
+          </TouchableOpacity>
+        </View>
 
         {/* show only in Sign Up */}
         {mode === "up" && (
@@ -154,14 +212,33 @@ function InlineAuth() {
               value={fullName}
               onChangeText={setFullName}
             />
-            <TextInput
-              placeholder="Date of birth (YYYY-MM-DD) (optional)"
-              placeholderTextColor={Colors.textDim}
-              style={authStyles.input}
-              keyboardType="numeric"
-              value={dob}
-              onChangeText={setDob}
-            />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={openDatePicker}
+              style={authStyles.dateButton}
+            >
+              <Text style={dob ? authStyles.dateText : authStyles.datePlaceholder}>
+                {dob ? dob : "Date of birth (optional)"}
+              </Text>
+            </TouchableOpacity>
+            {Platform.OS === "ios" && showIosPicker && (
+              <View style={authStyles.iosPickerContainer}>
+                <DateTimePicker
+                  value={dobDate ?? new Date(2000, 0, 1)}
+                  mode="date"
+                  display="spinner"
+                  maximumDate={new Date()}
+                  onChange={onIosDateChange}
+                  style={authStyles.iosPicker}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowIosPicker(false)}
+                  style={authStyles.iosPickerDoneBtn}
+                >
+                  <Text style={authStyles.iosPickerDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </>
         )}
 
@@ -186,6 +263,43 @@ const authStyles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, color: Colors.text,
     borderRadius: Radius.lg, padding: Spacing.md, fontSize: 16, marginBottom: Spacing.md,
   },
+  passwordWrapper: { marginBottom: Spacing.md },
+  passwordInput: { marginBottom: 0, paddingRight: Spacing.xl },
+  eyeToggle: {
+    position: "absolute",
+    right: Spacing.md,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  dateText: { color: Colors.text, fontSize: 16 },
+  datePlaceholder: { color: Colors.textDim, fontSize: 16 },
+  iosPickerContainer: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  iosPicker: { alignSelf: "stretch" },
+  iosPickerDoneBtn: {
+    alignSelf: "flex-end",
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+  },
+  iosPickerDoneText: { color: "#fff", fontWeight: "600" },
   btn: { backgroundColor: Colors.primary, paddingVertical: 12, borderRadius: Radius.md, alignItems: "center" },
   btnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
 });
