@@ -23,6 +23,7 @@ import DateTimePicker, {
 import { Card, Pill, SectionTitle, Divider } from "../../components/ui";
 import Hero from "../../components/Hero";
 import { Colors, Spacing, Radius } from "../../theme";
+import { db } from "../../lib/db";
 
 // Polyfills (keep at top)
 import "react-native-get-random-values";
@@ -315,6 +316,7 @@ export default function Home() {
 
   // saved rows
   const [saved, setSaved] = useState<SavedRow[]>([]);
+  const [itineraryCount, setItineraryCount] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -338,6 +340,18 @@ export default function Home() {
           .eq("user_id", user.id) // 🔒 filter to current user
           .order("created_at", { ascending: false });
         if (!error) setSaved(data || []);
+      })();
+      (async () => {
+        try {
+          const rows = await db.getAllAsync<{ count: number | string }>(
+            "SELECT COUNT(*) as count FROM itineraries"
+          );
+          const rawCount = rows?.[0]?.count ?? 0;
+          setItineraryCount(Number(rawCount) || 0);
+        } catch (error) {
+          console.log("❌ Error loading itinerary count", error);
+          setItineraryCount(0);
+        }
       })();
     }, [])
   );
@@ -417,6 +431,37 @@ export default function Home() {
             <Text style={s.tipText}>Try {suggestionHint} to get inspired.</Text>
           </View>
         </Card>
+
+        <TouchableOpacity
+          activeOpacity={0.92}
+          onPress={() => router.push("/itinerary" as any)}
+          style={s.itineraryCard}
+        >
+          <LinearGradient
+            colors={["#6366F1", "#8B5CF6", "#A855F7"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={s.itineraryGradient}
+          >
+            <View style={s.itineraryIconCircle}>
+              <Feather name="calendar" size={20} color="#0f172a" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.itineraryTitle}>Plan your itinerary</Text>
+              <Text style={s.itinerarySubtitle}>
+                Craft daily adventures, dining reservations and hidden gems—all saved offline.
+              </Text>
+            </View>
+            <View style={s.itineraryCountBadge}>
+              <Text style={s.itineraryCountText}>
+                {itineraryCount === 0 ? "New" : itineraryCount}
+              </Text>
+              <Text style={s.itineraryCountLabel}>
+                {itineraryCount === 1 ? "plan" : "plans"}
+              </Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* Saved from Supabase */}
         {saved.length > 0 && (
@@ -612,6 +657,60 @@ const s = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 15,
+  },
+  itineraryCard: {
+    borderRadius: Radius.xl,
+    overflow: "hidden",
+    shadowColor: Colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 6,
+  },
+  itineraryGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md + 4,
+  },
+  itineraryIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(248, 250, 252, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  itineraryTitle: {
+    color: "#F8FAFC",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  itinerarySubtitle: {
+    color: "rgba(248, 250, 252, 0.8)",
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  itineraryCountBadge: {
+    backgroundColor: "rgba(15, 23, 42, 0.12)",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  itineraryCountText: {
+    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  itineraryCountLabel: {
+    color: "rgba(248, 250, 252, 0.75)",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
   },
   tipRow: {
     flexDirection: "row",
