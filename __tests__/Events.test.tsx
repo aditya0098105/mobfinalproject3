@@ -25,7 +25,7 @@ describe("EventsScreen", () => {
   it("renders event title and details (UI)", () => {
     const { getByText } = render(<EventsScreen />);
     expect(getByText("Royal Albert Concert")).toBeTruthy();
-    expect(getByText("📅\n2025-10-12")).toBeTruthy();
+    expect(getByText("2025-10-12")).toBeTruthy();
     expect(getByText("Classical music festival.")).toBeTruthy();
   });
 

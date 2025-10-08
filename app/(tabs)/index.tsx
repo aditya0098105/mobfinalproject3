@@ -66,7 +66,7 @@ const POPULAR: { name: string; emoji: string }[] = [
 ];
 
 // util
-const toSlug = (s: string) => s.toLowerCase().trim().replace(/\s+/g, "-");
+export const toSlug = (s: string) => s.toLowerCase().trim().replace(/\s+/g, "-");
 
 // type for saved rows
 type SavedRow = {

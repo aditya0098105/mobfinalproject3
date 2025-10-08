@@ -19,8 +19,19 @@ jest.mock("@expo/vector-icons", () => {
   const React = require("react");
   const { Text } = require("react-native");
 
-  return {
-    Feather: ({ name = "", color, size = 16, style, ...rest }) =>
+  const ICON_LABELS: Record<string, string> = {
+    calendar: "📅",
+    "calendar-clear": "🗓",
+    "calendar-outline": "🗓",
+    "trash-outline": "🗑",
+    "create-outline": "✏️",
+    "bed-outline": "🛏",
+    "map": "🗺",
+    "sun": "☀️",
+  };
+
+  const createIcon = (setName: string) =>
+    ({ name = "", color, size = 16, style, ...rest }: any) =>
       React.createElement(
         Text,
         {
@@ -30,7 +41,11 @@ jest.mock("@expo/vector-icons", () => {
             style,
           ],
         },
-        `Feather:${name}`
-      ),
+        ICON_LABELS[name] ?? `${setName}:${name}`
+      );
+
+  return {
+    Feather: createIcon("Feather"),
+    Ionicons: createIcon("Ionicons"),
   };
 });

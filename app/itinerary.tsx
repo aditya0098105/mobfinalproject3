@@ -29,6 +29,23 @@ type Itinerary = {
 
 const gradientColors = ["#141E30", "#243B55", "#1F2937"];
 
+export function formatDateRange(start?: string | null, end?: string | null) {
+  if (!start && !end) return "Flexible dates";
+  if (start && !end) return `Starting ${start}`;
+  if (!start && end) return `Wrapping up by ${end}`;
+  return `${start} → ${end}`;
+}
+
+export function tripDuration(start?: string | null, end?: string | null) {
+  if (!start || !end) return null;
+  const startTime = new Date(start).getTime();
+  const endTime = new Date(end).getTime();
+  if (Number.isNaN(startTime) || Number.isNaN(endTime)) return null;
+  const diff = Math.max(0, Math.round((endTime - startTime) / (1000 * 60 * 60 * 24)) + 1);
+  if (!diff) return null;
+  return `${diff} day${diff === 1 ? "" : "s"}`;
+}
+
 export default function ItineraryPlanner() {
   const [title, setTitle] = useState("");
   const [destination, setDestination] = useState("");
@@ -116,23 +133,6 @@ export default function ItineraryPlanner() {
     if (plans.length === 1) return "One beautiful adventure awaits";
     return `${plans.length} crafted journeys ready to explore`;
   }, [plans.length]);
-
-  const formatDateRange = (start?: string | null, end?: string | null) => {
-    if (!start && !end) return "Flexible dates";
-    if (start && !end) return `Starting ${start}`;
-    if (!start && end) return `Wrapping up by ${end}`;
-    return `${start} → ${end}`;
-  };
-
-  const tripDuration = (start?: string | null, end?: string | null) => {
-    if (!start || !end) return null;
-    const startTime = new Date(start).getTime();
-    const endTime = new Date(end).getTime();
-    if (Number.isNaN(startTime) || Number.isNaN(endTime)) return null;
-    const diff = Math.max(0, Math.round((endTime - startTime) / (1000 * 60 * 60 * 24)) + 1);
-    if (!diff) return null;
-    return `${diff} day${diff === 1 ? "" : "s"}`;
-  };
 
   return (
     <LinearGradient colors={gradientColors} style={styles.gradient}>
