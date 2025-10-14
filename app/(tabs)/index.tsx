@@ -1,5 +1,5 @@
 // app/(tabs)/index.tsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   TextInput,
@@ -81,93 +81,104 @@ type SavedRow = {
   created_at?: string;
 };
 
+type AuthState = {
+  email: string;
+  pass: string;
+  fullName: string;
+  dob: string;
+  dobDate: Date | null;
+  mode: "in" | "up";
+  loading: boolean;
+  showPassword: boolean;
+  showIosPicker: boolean;
+};
+
+const defaultAuth: AuthState = {
+  email: "",
+  pass: "",
+  fullName: "",
+  dob: "",
+  dobDate: null,
+  mode: "in",
+  loading: false,
+  showPassword: false,
+  showIosPicker: false,
+};
+
 // -------------------- INLINE AUTH --------------------
 function InlineAuth() {
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
-  const [mode, setMode] = useState<"in" | "up">("in");
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [state, setState] = useState<AuthState>(defaultAuth);
+  const update = useCallback((patch: Partial<AuthState>) => {
+    setState((prev) => ({ ...prev, ...patch }));
+  }, []);
 
-  // NEW: extra fields for Sign Up
-  const [fullName, setFullName] = useState("");
-  const [dob, setDob] = useState("");
-  const [dobDate, setDobDate] = useState<Date | null>(null);
-  const [showIosPicker, setShowIosPicker] = useState(false);
+  const isSignUp = state.mode === "up";
 
   useEffect(() => {
-    if (mode === "in") {
-      setShowIosPicker(false);
-    }
-  }, [mode]);
+    if (!isSignUp) update({ showIosPicker: false });
+  }, [isSignUp, update]);
 
-  const handleDobSelect = (date: Date) => {
-    setDobDate(date);
-    const formatted = date.toISOString().split("T")[0];
-    setDob(formatted);
-  };
+  const handleDobSelect = (date: Date) =>
+    update({ dobDate: date, dob: date.toISOString().split("T")[0] });
 
   const openDatePicker = () => {
-    const initialDate = dobDate ?? new Date(2000, 0, 1);
+    const value = state.dobDate ?? new Date(2000, 0, 1);
     if (Platform.OS === "android") {
       DateTimePickerAndroid.open({
         mode: "date",
-        value: initialDate,
+        value,
         maximumDate: new Date(),
-        onChange: (_event, selectedDate) => {
-          if (selectedDate) {
-            handleDobSelect(selectedDate);
-          }
-        },
+        onChange: (_event, selectedDate) => selectedDate && handleDobSelect(selectedDate),
       });
-    } else {
-      setShowIosPicker(true);
+      return;
     }
+    update({ showIosPicker: true });
   };
 
-  const onIosDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
-    if (selectedDate) {
-      handleDobSelect(selectedDate);
-    }
-  };
+  const onIosDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) =>
+    selectedDate && handleDobSelect(selectedDate);
 
   const submit = async () => {
+    const { email, pass, mode, fullName, dob } = state;
     if (!email || !pass) return Alert.alert("Missing", "Enter email and password");
-    setLoading(true);
+    update({ loading: true });
     try {
       if (mode === "in") {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
-      } else {
-        // ✅ Save metadata on sign up
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password: pass,
-          options: {
-            data: {
-              full_name: fullName || null,
-              dob: dob || null, // keep string format
-            },
-          },
-        });
-        if (error) throw error;
-        // If email confirm OFF, session exists; else fallback sign-in
-        if (!data?.session) {
-          const { error: e2 } = await supabase.auth.signInWithPassword({ email, password: pass });
-          if (e2) throw e2;
-        }
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: pass,
+        options: { data: { full_name: fullName || null, dob: dob || null } },
+      });
+      if (error) throw error;
+      if (!data?.session) {
+        const { error: e2 } = await supabase.auth.signInWithPassword({ email, password: pass });
+        if (e2) throw e2;
       }
     } catch (e: any) {
       Alert.alert(mode === "in" ? "Sign in failed" : "Sign up failed", e?.message ?? "Try again");
     } finally {
-      setLoading(false);
+      update({ loading: false });
     }
   };
+
+  const toggleMode = () => update({ mode: isSignUp ? "in" : "up" });
+  const label = state.loading
+    ? state.mode === "in"
+      ? "Signing in…"
+      : "Creating…"
+    : state.mode === "in"
+      ? "Sign In"
+      : "Sign Up";
 
   return (
     <View style={{ padding: Spacing.lg, gap: Spacing.md, flex: 1, justifyContent: "center" }}>
       <Text style={{ fontSize: 24, fontWeight: "800", color: Colors.text, textAlign: "center" }}>
-        {mode === "in" ? "Sign in to CityHop" : "Create your CityHop account"}
+        {isSignUp ? "Create your CityHop account" : "Sign in to CityHop"}
       </Text>
 
       <Card>
@@ -177,65 +188,53 @@ function InlineAuth() {
           autoCapitalize="none"
           keyboardType="email-address"
           style={authStyles.input}
-          value={email}
-          onChangeText={setEmail}
+          value={state.email}
+          onChangeText={(email) => update({ email })}
         />
         <View style={authStyles.passwordWrapper}>
           <TextInput
             placeholder="Password"
             placeholderTextColor={Colors.textDim}
-            secureTextEntry={!showPassword}
+            secureTextEntry={!state.showPassword}
             style={[authStyles.input, authStyles.passwordInput]}
-            value={pass}
-            onChangeText={setPass}
+            value={state.pass}
+            onChangeText={(pass) => update({ pass })}
             autoCapitalize="none"
           />
           <TouchableOpacity
-            accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-            onPress={() => setShowPassword((prev) => !prev)}
+            accessibilityLabel={state.showPassword ? "Hide password" : "Show password"}
+            onPress={() => update({ showPassword: !state.showPassword })}
             style={authStyles.eyeToggle}
           >
-            <Feather
-              name={showPassword ? "eye-off" : "eye"}
-              size={20}
-              color={Colors.textDim}
-            />
+            <Feather name={state.showPassword ? "eye-off" : "eye"} size={20} color={Colors.textDim} />
           </TouchableOpacity>
         </View>
 
-        {/* show only in Sign Up */}
-        {mode === "up" && (
+        {isSignUp && (
           <>
             <TextInput
               placeholder="Full name (optional)"
               placeholderTextColor={Colors.textDim}
               style={authStyles.input}
-              value={fullName}
-              onChangeText={setFullName}
+              value={state.fullName}
+              onChangeText={(fullName) => update({ fullName })}
             />
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={openDatePicker}
-              style={authStyles.dateButton}
-            >
-              <Text style={dob ? authStyles.dateText : authStyles.datePlaceholder}>
-                {dob ? dob : "Date of birth (optional)"}
+            <TouchableOpacity activeOpacity={0.8} onPress={openDatePicker} style={authStyles.dateButton}>
+              <Text style={state.dob ? authStyles.dateText : authStyles.datePlaceholder}>
+                {state.dob || "Date of birth (optional)"}
               </Text>
             </TouchableOpacity>
-            {Platform.OS === "ios" && showIosPicker && (
+            {Platform.OS === "ios" && state.showIosPicker && (
               <View style={authStyles.iosPickerContainer}>
                 <DateTimePicker
-                  value={dobDate ?? new Date(2000, 0, 1)}
+                  value={state.dobDate ?? new Date(2000, 0, 1)}
                   mode="date"
                   display="spinner"
                   maximumDate={new Date()}
                   onChange={onIosDateChange}
                   style={authStyles.iosPicker}
                 />
-                <TouchableOpacity
-                  onPress={() => setShowIosPicker(false)}
-                  style={authStyles.iosPickerDoneBtn}
-                >
+                <TouchableOpacity onPress={() => update({ showIosPicker: false })} style={authStyles.iosPickerDoneBtn}>
                   <Text style={authStyles.iosPickerDoneText}>Done</Text>
                 </TouchableOpacity>
               </View>
@@ -243,15 +242,13 @@ function InlineAuth() {
           </>
         )}
 
-        <TouchableOpacity style={authStyles.btn} onPress={submit} disabled={loading}>
-          <Text style={authStyles.btnText}>
-            {loading ? (mode === "in" ? "Signing in…" : "Creating…") : mode === "in" ? "Sign In" : "Sign Up"}
-          </Text>
+        <TouchableOpacity style={authStyles.btn} onPress={submit} disabled={state.loading}>
+          <Text style={authStyles.btnText}>{label}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setMode(mode === "in" ? "up" : "in")} style={{ marginTop: 10, alignItems: "center" }}>
+        <TouchableOpacity onPress={toggleMode} style={{ marginTop: 10, alignItems: "center" }}>
           <Text style={{ color: Colors.primary, fontWeight: "700" }}>
-            {mode === "in" ? "New here? Create an account" : "Already have an account? Sign in"}
+            {isSignUp ? "Already have an account? Sign in" : "New here? Create an account"}
           </Text>
         </TouchableOpacity>
       </Card>
@@ -259,47 +256,31 @@ function InlineAuth() {
   );
 }
 
+const fieldFrame = {
+  borderWidth: 1,
+  borderColor: Colors.border,
+  backgroundColor: Colors.card,
+  borderRadius: Radius.lg,
+  padding: Spacing.md,
+};
+
+const textInputBase = {
+  ...fieldFrame,
+  color: Colors.text,
+  fontSize: 16,
+};
+
 const authStyles = StyleSheet.create({
-  input: {
-    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, color: Colors.text,
-    borderRadius: Radius.lg, padding: Spacing.md, fontSize: 16, marginBottom: Spacing.md,
-  },
+  input: { ...textInputBase, marginBottom: Spacing.md },
   passwordWrapper: { marginBottom: Spacing.md },
-  passwordInput: { marginBottom: 0, paddingRight: Spacing.xl },
-  eyeToggle: {
-    position: "absolute",
-    right: Spacing.md,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-  dateButton: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
+  passwordInput: { ...textInputBase, marginBottom: 0, paddingRight: Spacing.xl },
+  eyeToggle: { position: "absolute", right: Spacing.md, top: 0, bottom: 0, justifyContent: "center", paddingHorizontal: 4 },
+  dateButton: { ...fieldFrame, marginBottom: Spacing.md },
   dateText: { color: Colors.text, fontSize: 16 },
   datePlaceholder: { color: Colors.textDim, fontSize: 16 },
-  iosPickerContainer: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
+  iosPickerContainer: { ...fieldFrame, marginBottom: Spacing.md },
   iosPicker: { alignSelf: "stretch" },
-  iosPickerDoneBtn: {
-    alignSelf: "flex-end",
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
-  },
+  iosPickerDoneBtn: { alignSelf: "flex-end", backgroundColor: Colors.primary, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 6 },
   iosPickerDoneText: { color: "#fff", fontWeight: "600" },
   btn: { backgroundColor: Colors.primary, paddingVertical: 12, borderRadius: Radius.md, alignItems: "center" },
   btnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
@@ -329,32 +310,26 @@ export default function Home() {
   }, []);
 
   // refresh "Saved" whenever Home gains focus
-  useFocusEffect(
-    React.useCallback(() => {
-      (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setSaved([]); return; }
-        const { data, error } = await supabase
-          .from("saved_places")
-          .select("id,place_key,name,city,country,lat,lon,description,created_at")
-          .eq("user_id", user.id) // 🔒 filter to current user
-          .order("created_at", { ascending: false });
-        if (!error) setSaved(data || []);
-      })();
-      (async () => {
-        try {
-          const rows = await db.getAllAsync<{ count: number | string }>(
-            "SELECT COUNT(*) as count FROM itineraries"
-          );
-          const rawCount = rows?.[0]?.count ?? 0;
-          setItineraryCount(Number(rawCount) || 0);
-        } catch (error) {
-          console.log("❌ Error loading itinerary count", error);
-          setItineraryCount(0);
-        }
-      })();
-    }, [])
-  );
+  const refreshHome = useCallback(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setSaved([]); return; }
+      supabase
+        .from("saved_places")
+        .select("id,place_key,name,city,country,lat,lon,description,created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .then(({ data, error }) => { if (!error) setSaved(data || []); });
+    });
+
+    db.getAllAsync<{ count: number | string }>("SELECT COUNT(*) as count FROM itineraries")
+      .then((rows) => setItineraryCount(Number(rows?.[0]?.count ?? 0) || 0))
+      .catch((error) => {
+        console.log("❌ Error loading itinerary count", error);
+        setItineraryCount(0);
+      });
+  }, []);
+
+  useFocusEffect(useCallback(() => { refreshHome(); }, [refreshHome]));
 
   const go = (city: string) => { Keyboard.dismiss(); router.push(`/city/${encodeURIComponent(city)}` as any); };
   const onSearch = () => { const city = q.trim(); if (!city) return; go(city); };
@@ -554,249 +529,51 @@ export default function Home() {
   );
 }
 
+const rowCenter = { flexDirection: "row", alignItems: "center" } as const;
+const center = { alignItems: "center", justifyContent: "center" } as const;
+const shadowBase = { shadowColor: Colors.shadow, shadowOpacity: 1, shadowOffset: { width: 0, height: 16 }, elevation: 6 } as const;
+const shadowSoft = { shadowColor: Colors.shadow, shadowOpacity: 1, shadowOffset: { width: 0, height: 10 }, shadowRadius: 16, elevation: 3 } as const;
+const dimText = { color: Colors.textDim, fontSize: 13 } as const;
+
 const s = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    gap: Spacing.lg,
-    backgroundColor: Colors.bg,
-    paddingBottom: Spacing.xl, // extra bottom space for scroll
-  },
-  pillsWrap: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm },
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: Spacing.lg, marginTop: Spacing.sm },
-  tile: {
-    width: "48%",
-    borderRadius: Radius.lg,
-  },
+  container: { flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl, gap: Spacing.lg, backgroundColor: Colors.bg, paddingBottom: Spacing.xl },
+  pillsWrap: { ...rowCenter, flexWrap: "wrap", gap: Spacing.sm },
+  grid: { ...rowCenter, flexWrap: "wrap", justifyContent: "space-between", rowGap: Spacing.lg, marginTop: Spacing.sm },
+  tile: { width: "48%", borderRadius: Radius.lg },
   emoji: { fontSize: 28 },
   tileLabel: { color: Colors.text, fontWeight: "800", fontSize: 18, marginTop: Spacing.sm },
-
-  // sign out styles
-  signoutBtn: {
-    marginTop: Spacing.xl,
-    alignSelf: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 999,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
+  signoutBtn: { ...rowCenter, marginTop: Spacing.xl, alignSelf: "center", backgroundColor: Colors.card, borderRadius: 999, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, gap: Spacing.xs, borderWidth: 1, borderColor: Colors.border },
   signoutText: { color: Colors.primary, fontWeight: "800" },
-
-  welcomeCard: {
-    marginTop: -Spacing.xl,
-    backgroundColor: Colors.card,
-    padding: Spacing.lg,
-    borderRadius: Radius.xl,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.lg,
-    shadowColor: Colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 16 },
-    elevation: 6,
-  },
-  welcomeLabel: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: Colors.text,
-  },
-  welcomeSubtitle: {
-    color: Colors.textDim,
-    marginTop: Spacing.xs,
-    lineHeight: 20,
-  },
-  welcomeBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.primary,
-  },
-  searchCard: {
-    gap: Spacing.md,
-  },
-  searchTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.cardAlt,
-  },
-  searchInput: {
-    flex: 1,
-    color: Colors.text,
-    fontSize: 16,
-  },
-  searchBtn: {
-    marginTop: Spacing.sm,
-    borderRadius: Radius.lg,
-    paddingVertical: Spacing.sm + 4,
-    paddingHorizontal: Spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  searchBtnText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  itineraryCard: {
-    borderRadius: Radius.xl,
-    overflow: "hidden",
-    shadowColor: Colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 16 },
-    elevation: 6,
-  },
-  itineraryGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md + 4,
-  },
-  itineraryIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(248, 250, 252, 0.9)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itineraryTitle: {
-    color: "#F8FAFC",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  itinerarySubtitle: {
-    color: "rgba(248, 250, 252, 0.8)",
-    fontSize: 13,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  itineraryCountBadge: {
-    backgroundColor: "rgba(15, 23, 42, 0.12)",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itineraryCountText: {
-    color: "#F8FAFC",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  itineraryCountLabel: {
-    color: "rgba(248, 250, 252, 0.75)",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  tipRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-  },
-  tipText: {
-    color: Colors.textDim,
-    fontSize: 13,
-    flex: 1,
-  },
-  savedList: {
-    gap: Spacing.sm,
-  },
-  savedItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    backgroundColor: Colors.card,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: Colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 3,
-  },
-  savedIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.bgAlt,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  savedTitle: {
-    color: Colors.text,
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  savedMeta: {
-    color: Colors.textDim,
-    fontSize: 13,
-  },
-  sectionSubtitle: {
-    color: Colors.textDim,
-    fontSize: 13,
-    marginBottom: Spacing.sm,
-  },
-  tileGradient: {
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: Spacing.sm,
-  },
-  tileHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  tileBadge: {
-    backgroundColor: Colors.bgAlt,
-    borderRadius: 999,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-  },
-  tileBadgeText: {
-    color: Colors.primary,
-    fontWeight: "700",
-    fontSize: 12,
-    letterSpacing: 0.6,
-  },
-  tileFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    marginTop: Spacing.sm,
-  },
-  tileFooterText: {
-    color: Colors.primary,
-    fontWeight: "600",
-    fontSize: 12,
-    letterSpacing: 0.3,
-  },
+  welcomeCard: { ...rowCenter, marginTop: -Spacing.xl, backgroundColor: Colors.card, padding: Spacing.lg, borderRadius: Radius.xl, gap: Spacing.lg, ...shadowBase, shadowRadius: 22 },
+  welcomeLabel: { fontSize: 22, fontWeight: "800", color: Colors.text },
+  welcomeSubtitle: { ...dimText, marginTop: Spacing.xs, lineHeight: 20 },
+  welcomeBadge: { ...center, width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.primary },
+  searchCard: { gap: Spacing.md },
+  searchTitle: { fontSize: 18, fontWeight: "700", color: Colors.text },
+  searchRow: { ...rowCenter, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.cardAlt },
+  searchInput: { flex: 1, color: Colors.text, fontSize: 16 },
+  searchBtn: { ...rowCenter, marginTop: Spacing.sm, borderRadius: Radius.lg, paddingVertical: Spacing.sm + 4, paddingHorizontal: Spacing.lg, justifyContent: "space-between" },
+  searchBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+  itineraryCard: { borderRadius: Radius.xl, overflow: "hidden", ...shadowBase, shadowRadius: 20 },
+  itineraryGradient: { ...rowCenter, gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md + 4 },
+  itineraryIconCircle: { ...center, width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(248, 250, 252, 0.9)" },
+  itineraryTitle: { color: "#F8FAFC", fontSize: 18, fontWeight: "800" },
+  itinerarySubtitle: { color: "rgba(248, 250, 252, 0.8)", fontSize: 13, marginTop: 4, lineHeight: 18 },
+  itineraryCountBadge: { ...center, backgroundColor: "rgba(15, 23, 42, 0.12)", paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: Radius.lg },
+  itineraryCountText: { color: "#F8FAFC", fontSize: 16, fontWeight: "800" },
+  itineraryCountLabel: { color: "rgba(248, 250, 252, 0.75)", fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2 },
+  tipRow: { ...rowCenter, gap: Spacing.xs },
+  tipText: { ...dimText, flex: 1 },
+  savedList: { gap: Spacing.sm },
+  savedItem: { ...rowCenter, gap: Spacing.md, backgroundColor: Colors.card, borderRadius: Radius.lg, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm + 2, borderWidth: 1, borderColor: Colors.border, ...shadowSoft },
+  savedIconWrap: { ...center, width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.bgAlt },
+  savedTitle: { color: Colors.text, fontWeight: "700", fontSize: 15 },
+  savedMeta: { ...dimText },
+  sectionSubtitle: { ...dimText, marginBottom: Spacing.sm },
+  tileGradient: { borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.border, gap: Spacing.sm },
+  tileHeader: { ...rowCenter, justifyContent: "space-between" },
+  tileBadge: { backgroundColor: Colors.bgAlt, borderRadius: 999, paddingHorizontal: Spacing.sm, paddingVertical: 4 },
+  tileBadgeText: { color: Colors.primary, fontWeight: "700", fontSize: 12, letterSpacing: 0.6 },
+  tileFooter: { ...rowCenter, gap: Spacing.xs, marginTop: Spacing.sm },
+  tileFooterText: { color: Colors.primary, fontWeight: "600", fontSize: 12, letterSpacing: 0.3 },
 });
