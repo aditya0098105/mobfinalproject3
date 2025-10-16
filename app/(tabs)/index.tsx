@@ -22,6 +22,7 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { Card, Pill, SectionTitle, Divider } from "../../components/ui";
 import Hero from "../../components/Hero";
+import ItineraryIcon from "../../components/ItineraryIcon";
 import { Colors, Spacing, Radius } from "../../theme";
 import { db } from "../../lib/db";
 
@@ -419,7 +420,7 @@ export default function Home() {
             style={s.itineraryGradient}
           >
             <View style={s.itineraryIconCircle}>
-              <Feather name="calendar" size={20} color="#0f172a" />
+              <ItineraryIcon size={32} backgroundColor="transparent" strokeColor="#0f172a" accentColor="#22d3ee" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.itineraryTitle}>Plan your itinerary</Text>
