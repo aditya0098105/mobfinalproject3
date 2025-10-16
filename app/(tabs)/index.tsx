@@ -22,7 +22,6 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { Card, Pill, SectionTitle, Divider } from "../../components/ui";
 import Hero from "../../components/Hero";
-import ItineraryIcon from "../../components/ItineraryIcon";
 import { Colors, Spacing, Radius } from "../../theme";
 import { db } from "../../lib/db";
 
@@ -409,34 +408,14 @@ export default function Home() {
         </Card>
 
         <TouchableOpacity
-          activeOpacity={0.92}
+          activeOpacity={0.85}
           onPress={() => router.push("/itinerary" as any)}
-          style={s.itineraryCard}
+          style={s.itineraryLink}
         >
-          <LinearGradient
-            colors={["#6366F1", "#8B5CF6", "#A855F7"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={s.itineraryGradient}
-          >
-            <View style={s.itineraryIconCircle}>
-              <ItineraryIcon size={32} backgroundColor="transparent" strokeColor="#0f172a" accentColor="#22d3ee" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.itineraryTitle}>Plan your itinerary</Text>
-              <Text style={s.itinerarySubtitle}>
-                Craft daily adventures, dining reservations and hidden gems—all saved offline.
-              </Text>
-            </View>
-            <View style={s.itineraryCountBadge}>
-              <Text style={s.itineraryCountText}>
-                {itineraryCount === 0 ? "New" : itineraryCount}
-              </Text>
-              <Text style={s.itineraryCountLabel}>
-                {itineraryCount === 1 ? "plan" : "plans"}
-              </Text>
-            </View>
-          </LinearGradient>
+          <Feather name="calendar" size={20} color={Colors.primary} />
+          <Text style={s.itineraryLinkText}>
+            {`Itinerary${itineraryCount > 0 ? ` (${itineraryCount})` : ""}`}
+          </Text>
         </TouchableOpacity>
 
         {/* Saved from Supabase */}
@@ -468,7 +447,7 @@ export default function Home() {
                     }
                   >
                     <View style={s.savedIconWrap}>
-                      <Feather name="bookmark" size={16} color={Colors.primary} />
+                      <Feather name="bookmark" size={18} color={Colors.primary} />
                     </View>
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={s.savedTitle} numberOfLines={1}>{p.name}</Text>
@@ -555,19 +534,23 @@ const s = StyleSheet.create({
   searchInput: { flex: 1, color: Colors.text, fontSize: 16 },
   searchBtn: { ...rowCenter, marginTop: Spacing.sm, borderRadius: Radius.lg, paddingVertical: Spacing.sm + 4, paddingHorizontal: Spacing.lg, justifyContent: "space-between" },
   searchBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
-  itineraryCard: { borderRadius: Radius.xl, overflow: "hidden", ...shadowBase, shadowRadius: 20 },
-  itineraryGradient: { ...rowCenter, gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md + 4 },
-  itineraryIconCircle: { ...center, width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(248, 250, 252, 0.9)" },
-  itineraryTitle: { color: "#F8FAFC", fontSize: 18, fontWeight: "800" },
-  itinerarySubtitle: { color: "rgba(248, 250, 252, 0.8)", fontSize: 13, marginTop: 4, lineHeight: 18 },
-  itineraryCountBadge: { ...center, backgroundColor: "rgba(15, 23, 42, 0.12)", paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: Radius.lg },
-  itineraryCountText: { color: "#F8FAFC", fontSize: 16, fontWeight: "800" },
-  itineraryCountLabel: { color: "rgba(248, 250, 252, 0.75)", fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2 },
+  itineraryLink: {
+    ...rowCenter,
+    gap: Spacing.sm,
+    alignSelf: "flex-start",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+  },
+  itineraryLinkText: { color: Colors.text, fontSize: 16, fontWeight: "700" },
   tipRow: { ...rowCenter, gap: Spacing.xs },
   tipText: { ...dimText, flex: 1 },
   savedList: { gap: Spacing.sm },
   savedItem: { ...rowCenter, gap: Spacing.md, backgroundColor: Colors.card, borderRadius: Radius.lg, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm + 2, borderWidth: 1, borderColor: Colors.border, ...shadowSoft },
-  savedIconWrap: { ...center, width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.bgAlt },
+  savedIconWrap: { ...center, width: 28, height: 28 },
   savedTitle: { color: Colors.text, fontWeight: "700", fontSize: 15 },
   savedMeta: { ...dimText },
   sectionSubtitle: { ...dimText, marginBottom: Spacing.sm },
