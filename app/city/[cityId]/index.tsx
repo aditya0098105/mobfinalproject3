@@ -2,7 +2,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
 import { LinearGradient } from "expo-linear-gradient";
-import { Image, ImageBackground, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
 type Place = {
@@ -35,7 +35,6 @@ type CityData = { name: string; country: string; places: Place[]; events?: Event
 
 // ✅ fallback image
 const PLACEHOLDER = { uri: "https://picsum.photos/640/360?cityhop" };
-const RESTAURANT_PLACEHOLDER = { uri: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=800" };
 
 // ------------------- CITY DATA (all cities preserved, events added) -------------------
 export const CITY_DATA: Record<string, CityData> = {
@@ -856,49 +855,21 @@ export default function CityScreen() {
           {restaurants.length > 0 && (
             <>
               <View style={[s.sectionHeader, { marginTop: 8 }]}>
-                <Text style={s.sectionTitle}>Savor the city</Text>
-                <Text style={s.sectionSubtitle}>
-                  Reserve a table at buzz-worthy kitchens curated for unforgettable nights out.
-                </Text>
+                <Text style={s.sectionTitle}>Simple eats</Text>
+                <Text style={s.sectionSubtitle}>A few places to grab a meal while you explore.</Text>
               </View>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={s.restaurantsScroll}
-              >
+              <View style={s.restaurantList}>
                 {restaurants.map((spot) => (
-                  <View key={spot.id} style={s.restaurantCard}>
-                    <ImageBackground
-                      source={spot.img || RESTAURANT_PLACEHOLDER}
-                      style={s.restaurantImage}
-                      imageStyle={s.restaurantImageRadius}
-                    >
-                      <LinearGradient
-                        colors={["rgba(15, 23, 42, 0.05)", "rgba(15, 23, 42, 0.95)"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={s.restaurantOverlay}
-                      >
-                        <View style={s.restaurantTopRow}>
-                          <Text style={s.restaurantBadge}>{spot.price}</Text>
-                        </View>
-                        <View style={s.restaurantDetails}>
-                          <Text style={s.restaurantName}>{spot.name}</Text>
-                          <Text style={s.restaurantCuisine}>{spot.cuisine}</Text>
-                          <View style={s.restaurantMeta}>
-                            <Text style={s.restaurantRating}>⭐ {spot.rating.toFixed(1)}</Text>
-                            <Text style={s.restaurantDivider}>•</Text>
-                            <Text style={s.restaurantSignature} numberOfLines={2}>
-                              {spot.signature}
-                            </Text>
-                          </View>
-                        </View>
-                      </LinearGradient>
-                    </ImageBackground>
+                  <View key={spot.id} style={s.restaurantSimpleCard}>
+                    <Text style={s.restaurantNameSimple}>{spot.name}</Text>
+                    <Text style={s.restaurantLine}>{spot.cuisine}</Text>
+                    <Text style={s.restaurantLine}>Price: {spot.price}</Text>
+                    <Text style={s.restaurantLine}>Rating: {spot.rating.toFixed(1)}</Text>
+                    {!!spot.signature && <Text style={s.restaurantNotes}>{spot.signature}</Text>}
                   </View>
                 ))}
-              </ScrollView>
+              </View>
             </>
           )}
 
@@ -1052,37 +1023,17 @@ const s = StyleSheet.create({
     paddingVertical: 6,
   },
   placeMetaText: { color: "#60a5fa", fontWeight: "600", fontSize: 13, letterSpacing: 0.2 },
-  restaurantsScroll: { paddingBottom: 6, paddingRight: 12, gap: 16 },
-  restaurantCard: {
-    width: 260,
-    marginRight: 16,
-    borderRadius: 28,
-    overflow: "hidden",
+  restaurantList: { gap: 12, marginBottom: 32 },
+  restaurantSimpleCard: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
     borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.2)",
-    backgroundColor: "rgba(15, 23, 42, 0.68)",
+    borderColor: "rgba(148, 163, 184, 0.25)",
   },
-  restaurantImage: { width: "100%", height: 220 },
-  restaurantImageRadius: { borderRadius: 28 },
-  restaurantOverlay: { flex: 1, justifyContent: "space-between", padding: 18 },
-  restaurantTopRow: { flexDirection: "row", justifyContent: "flex-end" },
-  restaurantBadge: {
-    backgroundColor: "rgba(15, 118, 110, 0.7)",
-    color: "#ccfbf1",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: "700",
-    overflow: "hidden",
-  },
-  restaurantDetails: { gap: 4 },
-  restaurantName: { fontSize: 20, fontWeight: "700", color: "#f8fafc" },
-  restaurantCuisine: { color: "#dbeafe", fontSize: 14 },
-  restaurantMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap" },
-  restaurantRating: { color: "#facc15", fontWeight: "700" },
-  restaurantDivider: { color: "rgba(226, 232, 240, 0.75)", fontWeight: "700" },
-  restaurantSignature: { color: "#e2e8f0", flex: 1, flexWrap: "wrap", lineHeight: 18 },
+  restaurantNameSimple: { fontSize: 18, fontWeight: "700", color: "#f8fafc" },
+  restaurantLine: { marginTop: 4, color: "#cbd5f5" },
+  restaurantNotes: { marginTop: 8, color: "#e2e8f0", lineHeight: 18 },
   actions: { gap: 16, marginBottom: 24 },
   actionCard: { borderRadius: 24, overflow: "hidden" },
   actionGradient: {

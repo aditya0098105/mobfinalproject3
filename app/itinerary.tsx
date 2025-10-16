@@ -10,8 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { db } from "../lib/db";
@@ -26,8 +24,6 @@ type Itinerary = {
   experiences: string | null;
   created_at?: string | null;
 };
-
-const gradientColors = ["#141E30", "#243B55", "#1F2937"];
 
 export function formatDateRange(start?: string | null, end?: string | null) {
   if (!start && !end) return "Flexible dates";
@@ -135,7 +131,7 @@ export default function ItineraryPlanner() {
   }, [plans.length]);
 
   return (
-    <LinearGradient colors={gradientColors} style={styles.gradient}>
+    <View style={styles.screen}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -147,135 +143,85 @@ export default function ItineraryPlanner() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.heroCard}>
-            <View style={styles.heroGlow} />
-            <Text style={styles.heroEyebrow}>Itinerary atelier</Text>
             <Text style={styles.heroTitle}>{headline}</Text>
             <Text style={styles.heroSubtitle}>
-              Sculpt day-by-day experiences, bookmark must-do moments and keep everything safely stored offline.
+              Keep track of where you are headed and the key details for each trip.
             </Text>
           </View>
 
           <View style={styles.formCard}>
-            <Text style={styles.formHeading}>Create a new itinerary</Text>
+            <Text style={styles.formHeading}>New itinerary</Text>
             <TextInput
               style={styles.input}
-              placeholder="Trip title (e.g. Amalfi Coast escape)"
-              placeholderTextColor="rgba(226, 232, 240, 0.6)"
+              placeholder="Trip title"
               value={title}
               onChangeText={setTitle}
             />
             <TextInput
               style={styles.input}
-              placeholder="Primary destination"
-              placeholderTextColor="rgba(226, 232, 240, 0.6)"
+              placeholder="Destination"
               value={destination}
               onChangeText={setDestination}
             />
             <View style={styles.row}>
               <TextInput
                 style={[styles.input, styles.halfInput]}
-                placeholder="Start date (YYYY-MM-DD)"
-                placeholderTextColor="rgba(226, 232, 240, 0.6)"
+                placeholder="Start date"
                 value={startDate}
                 onChangeText={setStartDate}
               />
               <TextInput
                 style={[styles.input, styles.halfInput]}
-                placeholder="End date (YYYY-MM-DD)"
-                placeholderTextColor="rgba(226, 232, 240, 0.6)"
+                placeholder="End date"
                 value={endDate}
                 onChangeText={setEndDate}
               />
             </View>
             <TextInput
               style={[styles.input, styles.textarea]}
-              placeholder="Signature experiences, dining reservations, hidden gems..."
-              placeholderTextColor="rgba(226, 232, 240, 0.6)"
+              placeholder="Notes"
               value={experiences}
               onChangeText={setExperiences}
               multiline
               textAlignVertical="top"
             />
-            <TouchableOpacity
-              style={styles.saveButton}
-              activeOpacity={0.9}
-              onPress={savePlan}
-              disabled={loading}
-            >
-              <LinearGradient
-                colors={[Colors.accent, "#f97316"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.saveGradient}
-              >
-                <View style={styles.saveIcon}>
-                  <Feather name="zap" color="#0f172a" size={18} />
-                </View>
-                <Text style={styles.saveText}>{loading ? "Saving..." : "Save itinerary"}</Text>
-                <Text style={styles.saveHint}>Instantly synced to your device</Text>
-              </LinearGradient>
+            <TouchableOpacity style={styles.saveButton} activeOpacity={0.7} onPress={savePlan} disabled={loading}>
+              <Text style={styles.saveText}>{loading ? "Saving..." : "Save itinerary"}</Text>
             </TouchableOpacity>
           </View>
 
           <Text style={styles.listHeading}>Saved itineraries</Text>
           {plans.length === 0 ? (
             <View style={styles.emptyState}>
-              <View style={styles.emptyIconWrap}>
-                <Feather name="map" size={28} color="rgba(248, 250, 252, 0.8)" />
-              </View>
               <Text style={styles.emptyTitle}>No itineraries yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Start crafting your first escape and we’ll keep it ready for offline adventures.
-              </Text>
+              <Text style={styles.emptySubtitle}>Add your first trip using the form above.</Text>
             </View>
           ) : (
             plans.map((plan) => {
               const duration = tripDuration(plan.start_date, plan.end_date);
               return (
                 <View key={plan.id} style={styles.planCard}>
-                  <LinearGradient
-                    colors={["rgba(59, 130, 246, 0.18)", "rgba(59, 130, 246, 0.06)"]}
-                    style={styles.planGradient}
-                  >
-                    <View style={styles.planHeader}>
-                      <View style={styles.badge}>
-                        <Feather name="compass" size={16} color={Colors.primary} />
-                      </View>
-                      <View style={styles.headerText}>
-                        <Text style={styles.planTitle}>{plan.title}</Text>
-                        <Text style={styles.planDestination}>{plan.destination}</Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => confirmDelete(plan.id)}
-                        style={styles.deleteBtn}
-                        accessibilityLabel={`Delete ${plan.title}`}
-                      >
-                        <Feather name="trash-2" size={18} color="rgba(15, 23, 42, 0.7)" />
-                      </TouchableOpacity>
+                  <View style={styles.planHeader}>
+                    <View style={styles.headerText}>
+                      <Text style={styles.planTitle}>{plan.title}</Text>
+                      <Text style={styles.planDestination}>{plan.destination}</Text>
                     </View>
-                    <View style={styles.planMetaRow}>
-                      <View style={styles.metaChip}>
-                        <Feather name="calendar" size={14} color={Colors.primary} />
-                        <Text style={styles.metaText}>{formatDateRange(plan.start_date, plan.end_date)}</Text>
-                      </View>
-                      {duration && (
-                        <View style={styles.metaChip}>
-                          <Feather name="clock" size={14} color={Colors.primary} />
-                          <Text style={styles.metaText}>{duration}</Text>
-                        </View>
-                      )}
-                    </View>
-                    {!!plan.experiences && (
-                      <Text style={styles.planNotes}>{plan.experiences}</Text>
-                    )}
-                  </LinearGradient>
+                    <TouchableOpacity onPress={() => confirmDelete(plan.id)} accessibilityLabel={`Delete ${plan.title}`}>
+                      <Text style={styles.deleteText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.planMetaRow}>
+                    <Text style={styles.metaText}>{formatDateRange(plan.start_date, plan.end_date)}</Text>
+                    {duration && <Text style={styles.metaText}>• {duration}</Text>}
+                  </View>
+                  {!!plan.experiences && <Text style={styles.planNotes}>{plan.experiences}</Text>}
                 </View>
               );
             })
           )}
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -284,72 +230,57 @@ export const options = {
 };
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
+  screen: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
   flex: { flex: 1 },
-  content: { padding: 24, paddingBottom: 80 },
+  content: { padding: 16, paddingBottom: 48 },
   heroCard: {
-    borderRadius: 30,
-    padding: 24,
-    backgroundColor: "rgba(15, 23, 42, 0.72)",
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.25)",
-    marginBottom: 28,
-    overflow: "hidden",
-  },
-  heroGlow: {
-    position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: "rgba(59, 130, 246, 0.35)",
-    top: -140,
-    right: -120,
-  },
-  heroEyebrow: {
-    color: "#60a5fa",
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    fontSize: 12,
-    fontWeight: "600",
+    borderColor: "#d1d5db",
+    marginBottom: 16,
   },
   heroTitle: {
-    marginTop: 12,
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#f8fafc",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111827",
   },
   heroSubtitle: {
-    marginTop: 12,
-    color: "rgba(226, 232, 240, 0.9)",
+    marginTop: 8,
+    color: "#4b5563",
     lineHeight: 20,
   },
   formCard: {
-    backgroundColor: "rgba(15, 23, 42, 0.78)",
-    borderRadius: 26,
-    padding: 22,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.22)",
-    marginBottom: 28,
+    borderColor: "#d1d5db",
+    marginBottom: 20,
   },
   formHeading: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#f8fafc",
-    marginBottom: 18,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 12,
   },
   input: {
-    backgroundColor: "rgba(15, 23, 42, 0.92)",
-    borderRadius: Radius.lg,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    backgroundColor: "#ffffff",
+    borderRadius: Radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.18)",
-    color: "#f8fafc",
+    borderColor: "#d1d5db",
+    color: "#111827",
     fontSize: 15,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   textarea: {
-    minHeight: 110,
+    minHeight: 90,
     lineHeight: 20,
   },
   row: {
@@ -360,136 +291,85 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   saveButton: {
-    borderRadius: 24,
-    overflow: "hidden",
-    marginTop: 6,
-  },
-  saveGradient: {
-    paddingVertical: 18,
-    paddingHorizontal: 18,
+    marginTop: 4,
+    paddingVertical: 12,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.primary,
     alignItems: "center",
-    justifyContent: "center",
-  },
-  saveIcon: {
-    position: "absolute",
-    left: 18,
-    top: 18,
-    backgroundColor: "rgba(248, 250, 252, 0.9)",
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
   },
   saveText: {
-    color: "#0f172a",
-    fontWeight: "800",
-    fontSize: 16,
-  },
-  saveHint: {
-    color: "rgba(15, 23, 42, 0.7)",
-    fontSize: 12,
-    marginTop: 6,
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: 15,
   },
   listHeading: {
     fontSize: 17,
-    fontWeight: "700",
-    color: "#e2e8f0",
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 12,
   },
   emptyState: {
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "rgba(148, 163, 184, 0.25)",
-    backgroundColor: "rgba(15, 23, 42, 0.6)",
+    borderColor: "#d1d5db",
+    backgroundColor: "#ffffff",
     alignItems: "center",
     textAlign: "center",
   },
-  emptyIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: "rgba(248, 250, 252, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#f8fafc",
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 4,
   },
   emptySubtitle: {
-    color: "rgba(226, 232, 240, 0.8)",
+    color: "#4b5563",
     textAlign: "center",
     lineHeight: 20,
   },
   planCard: {
-    marginBottom: 18,
-    borderRadius: Radius.xl,
-    overflow: "hidden",
-  },
-  planGradient: {
-    padding: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    padding: 16,
   },
   planHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  badge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
+    alignItems: "flex-start",
+    marginBottom: 8,
   },
   headerText: {
     flex: 1,
   },
   planTitle: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "600",
     color: Colors.text,
   },
   planDestination: {
     color: Colors.textDim,
     marginTop: 2,
   },
-  deleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   planMetaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-  },
-  metaChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.86)",
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    gap: 8,
   },
   metaText: {
-    color: Colors.primary,
-    fontWeight: "600",
+    color: Colors.textDim,
+    fontSize: 13,
   },
   planNotes: {
-    marginTop: 14,
-    color: "rgba(15, 23, 42, 0.8)",
+    marginTop: 8,
+    color: Colors.text,
     lineHeight: 20,
+    fontSize: 14,
+  },
+  deleteText: {
+    color: "#b91c1c",
+    fontSize: 14,
   },
 });
