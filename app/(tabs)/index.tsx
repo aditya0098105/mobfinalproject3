@@ -23,7 +23,6 @@ import DateTimePicker, {
 import { Card, Pill, SectionTitle, Divider } from "../../components/ui";
 import Hero from "../../components/Hero";
 import { Colors, Spacing, Radius } from "../../theme";
-import { db } from "../../lib/db";
 
 // Polyfills (keep at top)
 import "react-native-get-random-values";
@@ -297,7 +296,6 @@ export default function Home() {
 
   // saved rows
   const [saved, setSaved] = useState<SavedRow[]>([]);
-  const [itineraryCount, setItineraryCount] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -321,12 +319,6 @@ export default function Home() {
         .then(({ data, error }) => { if (!error) setSaved(data || []); });
     });
 
-    db.getAllAsync<{ count: number | string }>("SELECT COUNT(*) as count FROM itineraries")
-      .then((rows) => setItineraryCount(Number(rows?.[0]?.count ?? 0) || 0))
-      .catch((error) => {
-        console.log("❌ Error loading itinerary count", error);
-        setItineraryCount(0);
-      });
   }, []);
 
   useFocusEffect(useCallback(() => { refreshHome(); }, [refreshHome]));
@@ -338,9 +330,6 @@ export default function Home() {
     ? SUGGEST.filter((c) => c.toLowerCase().startsWith(q.toLowerCase())).slice(0, 5)
     : SUGGEST.slice(0, 8);
 
-  const userName = session?.user?.user_metadata?.full_name as string | undefined;
-  const greeting = userName ? `Welcome back, ${userName.split(" ")[0]}!` : "Welcome back";
-  const subGreeting = "Let’s curate a bespoke city guide for your next getaway.";
   const suggestionHint = SUGGEST.slice(0, 3).join(", ");
 
   if (authLoading) {
@@ -365,16 +354,6 @@ export default function Home() {
 
       {/* Home content */}
       <View style={s.container}>
-        <View style={s.welcomeCard}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.welcomeLabel}>{greeting}</Text>
-            <Text style={s.welcomeSubtitle}>{subGreeting}</Text>
-          </View>
-          <View style={s.welcomeBadge}>
-            <Feather name="compass" size={24} color="#fff" />
-          </View>
-        </View>
-
         <Card style={s.searchCard}>
           <Text style={s.searchTitle}>Where are we headed?</Text>
           <View style={s.searchRow}>
@@ -413,9 +392,7 @@ export default function Home() {
           style={s.itineraryLink}
         >
           <Feather name="calendar" size={20} color={Colors.primary} />
-          <Text style={s.itineraryLinkText}>
-            {`Itinerary${itineraryCount > 0 ? ` (${itineraryCount})` : ""}`}
-          </Text>
+          <Text style={s.itineraryLinkText}>Itinerary</Text>
         </TouchableOpacity>
 
         {/* Saved from Supabase */}
@@ -446,9 +423,7 @@ export default function Home() {
                       } as any)
                     }
                   >
-                    <View style={s.savedIconWrap}>
-                      <Feather name="bookmark" size={18} color={Colors.primary} />
-                    </View>
+                    <Feather name="bookmark" size={18} color={Colors.textDim} />
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={s.savedTitle} numberOfLines={1}>{p.name}</Text>
                       {!!location && (
@@ -524,10 +499,6 @@ const s = StyleSheet.create({
   tileLabel: { color: Colors.text, fontWeight: "800", fontSize: 18, marginTop: Spacing.sm },
   signoutBtn: { ...rowCenter, marginTop: Spacing.xl, alignSelf: "center", backgroundColor: Colors.card, borderRadius: 999, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, gap: Spacing.xs, borderWidth: 1, borderColor: Colors.border },
   signoutText: { color: Colors.primary, fontWeight: "800" },
-  welcomeCard: { ...rowCenter, marginTop: -Spacing.xl, backgroundColor: Colors.card, padding: Spacing.lg, borderRadius: Radius.xl, gap: Spacing.lg, ...shadowBase, shadowRadius: 22 },
-  welcomeLabel: { fontSize: 22, fontWeight: "800", color: Colors.text },
-  welcomeSubtitle: { ...dimText, marginTop: Spacing.xs, lineHeight: 20 },
-  welcomeBadge: { ...center, width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.primary },
   searchCard: { gap: Spacing.md },
   searchTitle: { fontSize: 18, fontWeight: "700", color: Colors.text },
   searchRow: { ...rowCenter, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.cardAlt },
@@ -550,7 +521,6 @@ const s = StyleSheet.create({
   tipText: { ...dimText, flex: 1 },
   savedList: { gap: Spacing.sm },
   savedItem: { ...rowCenter, gap: Spacing.md, backgroundColor: Colors.card, borderRadius: Radius.lg, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm + 2, borderWidth: 1, borderColor: Colors.border, ...shadowSoft },
-  savedIconWrap: { ...center, width: 28, height: 28 },
   savedTitle: { color: Colors.text, fontWeight: "700", fontSize: 15 },
   savedMeta: { ...dimText },
   sectionSubtitle: { ...dimText, marginBottom: Spacing.sm },
